@@ -11,6 +11,12 @@ class Bvn(Nibss):
         body = data["body"]
         return encrypted_request(headers, URL, data["Aes_key"], data["Iv_key"], body)
 
+    def get_single(self, data):
+        URL = urljoin(BASE_URL(self.url), "/nibss/bvnr/GetSingleBVN")
+        headers = self.headers
+        body = data["body"]
+        return encrypted_request(headers, URL, data["Aes_key"], data["Iv_key"], body)
+
     def verify_multiple(self, data):
         URL = urljoin(BASE_URL(self.url), "/nibss/bvnr/VerifyMultipleBVN")
         headers = self.headers
