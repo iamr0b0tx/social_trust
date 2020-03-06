@@ -1,7 +1,6 @@
 from django.urls import path, include
 from . import views
 from rest_framework import routers
-import drf_autodocs
 
 router = routers.DefaultRouter()
 router.register(r'user', views.UserView, 'user')
@@ -18,6 +17,7 @@ router.register(r'other_phone_number', views.OtherPhoneNumberView, 'Other PhoneN
 
 urlpatterns = [
     path('', include(router.urls)),
+    path(r'get_score/<str:twitter_handle>', views.get_score),
     path(r'verify_bvn/<str:bank_verification_number>', views.verify_bvn),
     path(r'verify_phone_number/<str:phone_number>', views.verify_phone_number),
     path(r'signup_with_bvn/<str:bank_verification_number>/<str:phone_number>/<str:code>/<str:pin>', views.signup_with_bvn),
