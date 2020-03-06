@@ -28,15 +28,15 @@ class BankSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('bank_id', 'bank_name', 'bank_code', 'timestamp')
 
 
-class BankAccountSerializer(serializers.HyperlinkedModelSerializer):
+class BankAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = BankAccount
         fields = ('bank_account_id', 'account_number', 'bank')
 
 
-class BeneficiarySerializer(serializers.HyperlinkedModelSerializer):
+class BeneficiarySerializer(serializers.ModelSerializer):
     class Meta:
-        model = Bank
+        model = Beneficiary
         fields = ('beneficiary_id', 'account_number', 'bank', 'customer')
 
 
@@ -60,39 +60,39 @@ class CustomerSerializer(serializers.HyperlinkedModelSerializer):
         validated_data['pin'] = make_password(validated_data.get('pin'))
         return super(CustomerSerializer, self).create(validated_data)
 
-class CustomerCodeSerializer(serializers.HyperlinkedModelSerializer):
+class CustomerCodeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Bank
+        model = CustomerCode
         fields = (
             'customer_code_id', 'customer_code', 'bank_account', 'customer',
             'facebook_link', 'twitter_link', 'linkedin_link', 'phonenumber', 'instagram_link', 'timestamp'
         )
 
 
-class TransactionSerializer(serializers.HyperlinkedModelSerializer):
+class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Bank
+        model = Transaction
         fields = ('transaction_id', 'amount', 'customer', 'customer_code', 'beneficiary', 'status', 'timestamp')
 
 
 
-class OtherAddressSerializer(serializers.HyperlinkedModelSerializer):
+class OtherAddressSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Bank
-        fields = ('other_address_id', 'address', 'customer', 'verified_by', 'timestamp')
+        model = OtherAddress
+        fields = ('other_address_id', 'address', 'customer', 'timestamp')
         read_only_fields = ('other_address_id', 'timestamp')
 
 
-class OtherEmailSerializer(serializers.HyperlinkedModelSerializer):
+class OtherEmailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Bank
+        model = OtherEmail
         fields = ('other_email_id', 'email', 'customer', 'status', 'timestamp')
         read_only_fields = ('other_email_id', 'timestamp')
 
 
 
-class OtherPhoneNumberSerializer(serializers.HyperlinkedModelSerializer):
+class OtherPhoneNumberSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Bank
+        model = OtherPhoneNumber
         fields = ('other_phone_id', 'phonenumber', 'customer', 'status', 'timestamp')
         read_only_fields = ('other_phone_id', 'timestamp')

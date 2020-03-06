@@ -1,5 +1,7 @@
 import json, requests
 
+from random import randint
+
 from django.http import HttpResponse
 from django.views.decorators.http import require_http_methods
 from rest_framework import viewsets, generics
@@ -19,6 +21,7 @@ from api.serializers import (
 from nibss.credentials import Credentials
 from nibss.bvn import Bvn
 
+CODES = [1234, 7356, 9273, 9387]
 YOUR_ORGANIZATION_CODE = "11111"
 YOUR_SANDBOX_KEY = "f089e1189acb8419fcff28bc6d2177a0"
 
@@ -44,7 +47,7 @@ def verify_bvn(request, bank_verification_number=None):
     # initial data
     phone_number = email = False
 
-    if bank_verification_number is None or len(bank_verification_number) != 11:
+    if bank_verification_number is None or len(bank_verification_number) != 11 or not bank_verification_number.isdigit():
         return HttpResponse(
             json.dumps(
                 {"phone_number": phone_number, "email": email}
@@ -96,7 +99,7 @@ def verify_bvn(request, bank_verification_number=None):
     )
 
 @require_http_methods(['POST', 'GET'])
-def signup_with_bvn(request, phone_number=None):
+def signup_with_bvn(request, bank_verification_number=None, phone_number=None, code=None, pin=None):
     
     # initial data
     status = False
@@ -107,30 +110,39 @@ def signup_with_bvn(request, phone_number=None):
         )
     )
 
-
-    if phone_number is None or len(phone_number) != 14:
+    if (phone_number is None or len(phone_number) != 14):
         return BAD_RESPONSE
 
-    code = 1234
-    url = "https://sandboxapi.fsi.ng/atlabs/messaging"
-    header = {"Sandbox-Key":YOUR_SANDBOX_KEY, "Content-Type":"application/json"}
-    body = {"to": "+2348037428664", "from": "FSI", "message": f"Your bank Verification Code is {code}"}
+    if (bank_verification_number is None or len(bank_verification_number) != 11 or not bank_verification_number.isdigit()):
+        return BAD_RESPONSE
+
+    if code == None or not code.isdigit() or len(code) != 4:
+        return BAD_RESPONSE
+
+    if pin == None or not pin.isdigit() or len(pin) != 6:
+        return BAD_RESPONSE
+
+    code = code in CODES
+    single = Bvn(header).get_single({
+        "body": {"BVN": bank_verification_number},
+        "Aes_key": YOUR_AES_KEY,
+        "Iv_key": YOUR_IV_KEY
+    })['data']
+
+    url = "http://127.0.0.1:8000/api/customer/"
+    head = {"Content-Type":"application/json"}
+    body = {
+        "firstname": single['FirstName'],
+        "lastname":	single['LastName'],
+        "middlename":	single['MiddleName'],
+        "email": single['Email'],
+        "pin": pin,
+        "phonenumber": single['PhoneNumber1'],
+        "image": ""
+    }
     
-    response = json.loads(requests.post(
-        url=url, headers=header, data=json.dumps(body)).text
-    ).get("SMSMessageData", False)
-
-    if response:
-        response = response.get("Recipients", False)
-
-        if response:
-            if response[0].get("statusCode", False) == 101:
-                status = True
-                return HttpResponse(
-                    json.dumps(
-                        {"status": status}
-                    )
-                )
+    print(single)
+    print(requests.post(url=url, headers=head, data=json.dumps(body)).text)
 
     return BAD_RESPONSE
 
@@ -150,10 +162,11 @@ def verify_phone_number(request, phone_number=None):
     if phone_number is None or len(phone_number) != 14:
         return BAD_RESPONSE
 
-    code = 1234
+    code = CODES[randint(0, len(CODES)-1)]
+
     url = "https://sandboxapi.fsi.ng/atlabs/messaging"
     header = {"Sandbox-Key":YOUR_SANDBOX_KEY, "Content-Type":"application/json"}
-    body = {"to": "+2348037428664", "from": "FSI", "message": f"Your bank Verification Code is {code}"}
+    body = {"to": phone_number, "from": "FSI", "message": f"Your bank Verification Code is {code}"}
     
     response = json.loads(requests.post(
         url=url, headers=header, data=json.dumps(body)).text
@@ -178,7 +191,46 @@ class UserView(viewsets.ModelViewSet):
     serializer_class = UserSerializer
 
 
+class BankView(viewsets.ModelViewSet):
+    queryset = Bank.objects.all().order_by()
+    serializer_class = BankSerializer
+
+
+class BankAccountView(viewsets.ModelViewSet):
+    queryset = BankAccount.objects.all().order_by()
+    serializer_class = BankAccountSerializer
+
+
+class BeneficiaryView(viewsets.ModelViewSet):
+    queryset = Beneficiary.objects.all().order_by()
+    serializer_class = BeneficiarySerializer
+
+
 class CustomerView(viewsets.ModelViewSet):
     queryset = Customer.objects.all().order_by('-timestamp')
     serializer_class = CustomerSerializer
 
+
+class CustomerCodeView(viewsets.ModelViewSet):
+    queryset = CustomerCode.objects.all().order_by('-timestamp')
+    serializer_class = CustomerCodeSerializer
+
+
+class TransactionView(viewsets.ModelViewSet):
+    queryset = Transaction.objects.all().order_by('-timestamp')
+    serializer_class = TransactionSerializer
+
+
+class OtherAddressView(viewsets.ModelViewSet):
+    queryset = OtherAddress.objects.all().order_by('-timestamp')
+    serializer_class = OtherAddressSerializer
+
+
+class OtherEmailView(viewsets.ModelViewSet):
+    queryset = OtherEmail.objects.all().order_by('-timestamp')
+    serializer_class = OtherEmailSerializer
+
+
+class OtherPhoneNumberView(viewsets.ModelViewSet):
+    queryset = OtherPhoneNumber.objects.all().order_by('-timestamp')
+    serializer_class = OtherPhoneNumberSerializer
